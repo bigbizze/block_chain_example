@@ -1,4 +1,4 @@
-# block_chain_example
+# Block Chain Example
 
 I was helping a user on pythontutor.com & wrote this as a result of that.
 
