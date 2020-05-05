@@ -27,10 +27,10 @@ BlockChain = NamedTuple("BlockChain", (
 def print_block(block: Block, time_taken: float):
     print(f"""
 Block Name: {block.name}
-Block Hash: {str(hash_block(block))}
-Block Number: {str(block.block_num)}
-Hashes: {str(block.nonce)}
-Time Taken: {str(time_taken)}
+Block Hash: {hash_block(block)}
+Block Number: {block.block_num}
+Hashes: {block.nonce}
+Time Taken: {time_taken}
 --------------""".lstrip())
 
 
