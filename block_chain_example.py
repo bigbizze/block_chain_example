@@ -24,6 +24,15 @@ BlockChain = NamedTuple("BlockChain", (
 ))
 
 
+def print_block(block: Block):
+    print(f"""
+Block Hash: {str(hash_block(block))}
+BlockNo: {str(block.block_num)}
+Block Data: {str(block.data)}
+Hashes: {str(block.nonce)}
+--------------""".lstrip())
+
+
 def get_state_dict(prev_state, **kwargs):
     if len(kwargs.keys()) == 0:
         kwargs = prev_state
@@ -37,7 +46,7 @@ def reducer(_type, prev_state: Any, **kwargs):
     """
     Reduces a set of actions (denoted as type: payload for key: value in kwargs)
     to return the next state.
-     
+
     :param _type: reference to NamedTuple to be returned
     :param prev_state: the previous state
     :param kwargs: a set of actions, keys are property names, values are their values
@@ -50,8 +59,8 @@ def reducer(_type, prev_state: Any, **kwargs):
             value = kwargs[key]
         else:
             value = prev_state_dict[key]
-        params = [(k, v) for k, v in params if k is not key]
-        params.extend([(key, value)])
+        params = {(k, v) for k, v in params if k is not key}
+        params.add((key, value))
     return _type(**dict(params))
 
 
@@ -95,15 +104,6 @@ def hash_block(block: Block):
         str(block.block_num).encode('utf-8')
     )
     return h.hexdigest()
-
-
-def print_block(block: Block):
-    print(f"""
-Block Hash: {str(hash_block(block))}
-BlockNo: {str(block.block_num)}
-Block Data: {str(block.data)}
-Hashes: {str(block.nonce)}
---------------""".lstrip())
 
 
 def add_block_to_blockchain(block: Block, block_chain: BlockChain):
