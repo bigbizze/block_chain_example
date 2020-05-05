@@ -5,7 +5,6 @@ from typing import NamedTuple, Optional, Any
 Block = NamedTuple("Block", (
     ("name", str),
     ("block_num", int),
-    ("data", Optional[int]),
     ("next", any),
     ("hash", Optional[str]),
     ("nonce", int),
@@ -26,9 +25,9 @@ BlockChain = NamedTuple("BlockChain", (
 
 def print_block(block: Block):
     print(f"""
+Block Name: {block.name}
 Block Hash: {str(hash_block(block))}
-BlockNo: {str(block.block_num)}
-Block Data: {str(block.data)}
+Block Number: {str(block.block_num)}
 Hashes: {str(block.nonce)}
 --------------""".lstrip())
 
@@ -68,7 +67,6 @@ def get_initial_block(name) -> Block:
     return reducer(Block, {
         "name": name,
         "block_num": 0,
-        "data": None,
         "next": None,
         "hash": None,
         "nonce": 0,
@@ -99,8 +97,8 @@ def update_block_chain_state(prev_block_chain: BlockChain, **kwargs) -> BlockCha
 def hash_block(block: Block):
     h = hashlib.sha256()
     h.update(
+        str(block.name).encode('utf-8') +
         str(block.nonce).encode('utf-8') +
-        str(block.data).encode('utf-8') +
         str(block.previous_hash).encode('utf-8') +
         str(block.timestamp).encode('utf-8') +
         str(block.block_num).encode('utf-8')
