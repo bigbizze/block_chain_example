@@ -125,6 +125,7 @@ def add_block_to_blockchain(block: Block, block_chain: BlockChain):
 
 def mine(nxt_block: Block, block_chain: BlockChain):
     t = time.time()
+    print_block(nxt_block, time.time() - t)
     for n in range(block_chain.max_nonce):
         if int(hash_block(nxt_block), 16) <= block_chain.target:
             nxt_block, block_chain = add_block_to_blockchain(nxt_block, block_chain)
@@ -139,7 +140,7 @@ def mine(nxt_block: Block, block_chain: BlockChain):
 
 
 def main():
-    block = get_initial_block("Genesis")
+    block = get_initial_block("Patient 0")
     block_chain = get_initial_block_chain(block)
     for n in range(100):
         mine(block, block_chain)
