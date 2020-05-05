@@ -24,30 +24,29 @@ BlockChain = NamedTuple("BlockChain", (
 ))
 
 
-def get_state_dict(old_state, **kwargs):
+def get_state_dict(prev_state, **kwargs):
     if len(kwargs.keys()) == 0:
-        kwargs = old_state
-    if isinstance(old_state, dict):
-        return old_state, kwargs
-    assert hasattr(old_state, "_asdict")
-    return dict(old_state._asdict()), kwargs
+        kwargs = prev_state
+    if isinstance(prev_state, dict):
+        return prev_state, kwargs
+    assert hasattr(prev_state, "_asdict")
+    return dict(prev_state._asdict()), kwargs
 
 
-def reducer(_type, old_state: Any, **kwargs):
+def reducer(_type, prev_state: Any, **kwargs):
     """
-    Returns a new instance of the next state
-    
     :param _type: reference to NamedTuple to be returned
-    :param old_state: the previous state
-    :param kwargs: a set of actions to perform on state, keys are property names, values are their values
+    :param prev_state: the previous state of this tuple
+    :param kwargs: a set of actions, keys are property names, values are their values
+    :return: NamedTuple
     """
-    old_state_dict, kwargs = get_state_dict(old_state, **kwargs)
+    prev_state_dict, kwargs = get_state_dict(prev_state, **kwargs)
     params = {}
-    for key in old_state_dict.keys():
+    for key in prev_state_dict.keys():
         if key in kwargs.keys():
             value = kwargs[key]
         else:
-            value = old_state_dict[key]
+            value = prev_state_dict[key]
         params = [(k, v) for k, v in params if k is not key]
         params.extend([(key, value)])
     return _type(**dict(params))
@@ -68,14 +67,14 @@ def get_new_named_block(name, prev_block: Block = None, **kwargs) -> Block:
     })
 
 
-def get_new_block_chain(old_block: Block) -> BlockChain:
+def get_new_block_chain(prev_block: Block) -> BlockChain:
     return reducer(BlockChain, {
         "block_num": 0,
         "max_nonce": 2 ** 32,
         "diff": 10,
         "target": 2 ** (256 - 10),
-        "block": old_block,
-        "head": old_block
+        "block": prev_block,
+        "head": prev_block
     })
 
 
