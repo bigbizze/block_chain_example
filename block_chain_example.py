@@ -35,10 +35,11 @@ def get_state_dict(old_state, **kwargs):
 
 def reducer(_type, old_state: Any, **kwargs):
     """
+    Returns a new instance of the next state
+    
     :param _type: reference to NamedTuple to be returned
-    :param old_state: the previous state of this tuple
-    :param kwargs: a set of actions, keys are property names, values are their values
-    :return: NamedTuple
+    :param old_state: the previous state
+    :param kwargs: a set of actions to perform on state, keys are property names, values are their values
     """
     old_state_dict, kwargs = get_state_dict(old_state, **kwargs)
     params = {}
