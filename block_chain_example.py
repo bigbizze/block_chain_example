@@ -64,9 +64,7 @@ def reducer(_type, prev_state: Any, **kwargs):
     return _type(**dict(params))
 
 
-def get_new_named_block(name, prev_block: Block = None, **kwargs) -> Block:
-    if not len(kwargs.keys()) == 0:
-        return reducer(Block, prev_block, **kwargs)
+def get_initial_block(name) -> Block:
     return reducer(Block, {
         "name": name,
         "block_num": 0,
@@ -79,7 +77,11 @@ def get_new_named_block(name, prev_block: Block = None, **kwargs) -> Block:
     })
 
 
-def get_new_block_chain(prev_block: Block) -> BlockChain:
+def get_new_named_block(prev_block: Block = None, **kwargs) -> Block:
+    return reducer(Block, prev_block, **kwargs)
+
+
+def get_initial_block_chain(prev_block: Block) -> BlockChain:
     return reducer(BlockChain, {
         "block_num": 0,
         "max_nonce": 2 ** 32,
@@ -109,8 +111,8 @@ def hash_block(block: Block):
 def add_block_to_blockchain(block: Block, block_chain: BlockChain):
     block_num = block_chain.block_num + 1
     new_block = get_new_named_block(
-        f"Block #{block_num}",
         block,
+        name=f"Block #{block_num}",
         previous_hash=hash_block(block),
         block_num=block_num
     )
@@ -127,12 +129,16 @@ def mine(nxt_block: Block, block_chain: BlockChain):
             nxt_block, block_chain = add_block_to_blockchain(nxt_block, block_chain)
             print_block(nxt_block)
         else:
-            nxt_block = get_new_named_block(f"Block #{nxt_block.nonce}", nxt_block, nonce=nxt_block.nonce + 1)
+            nxt_block = get_new_named_block(
+                nxt_block,
+                name=f"Block #{nxt_block.nonce}",
+                nonce=nxt_block.nonce + 1
+            )
 
 
 def main():
-    block = get_new_named_block("Genesis")
-    block_chain = get_new_block_chain(block)
+    block = get_initial_block("Genesis")
+    block_chain = get_initial_block_chain(block)
     for n in range(10):
         mine(block, block_chain)
 
