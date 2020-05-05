@@ -35,8 +35,11 @@ def get_state_dict(prev_state, **kwargs):
 
 def reducer(_type, prev_state: Any, **kwargs):
     """
+    Reduces a set of actions (denoted as type: payload for key: value in kwargs)
+    to return the next state.
+     
     :param _type: reference to NamedTuple to be returned
-    :param prev_state: the previous state of this tuple
+    :param prev_state: the previous state
     :param kwargs: a set of actions, keys are property names, values are their values
     :return: NamedTuple
     """
