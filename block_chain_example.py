@@ -1,4 +1,5 @@
 import hashlib
+import time
 from datetime import datetime
 from typing import NamedTuple, Optional, Any
 
@@ -23,12 +24,13 @@ BlockChain = NamedTuple("BlockChain", (
 ))
 
 
-def print_block(block: Block):
+def print_block(block: Block, time_taken: float):
     print(f"""
 Block Name: {block.name}
 Block Hash: {str(hash_block(block))}
 Block Number: {str(block.block_num)}
 Hashes: {str(block.nonce)}
+Time Taken: {str(time_taken)}
 --------------""".lstrip())
 
 
@@ -122,10 +124,12 @@ def add_block_to_blockchain(block: Block, block_chain: BlockChain):
 
 
 def mine(nxt_block: Block, block_chain: BlockChain):
+    t = time.time()
     for n in range(block_chain.max_nonce):
         if int(hash_block(nxt_block), 16) <= block_chain.target:
             nxt_block, block_chain = add_block_to_blockchain(nxt_block, block_chain)
-            print_block(nxt_block)
+            print_block(nxt_block, time.time() - t)
+            t = time.time()
         else:
             nxt_block = get_new_named_block(
                 nxt_block,
@@ -137,7 +141,7 @@ def mine(nxt_block: Block, block_chain: BlockChain):
 def main():
     block = get_initial_block("Genesis")
     block_chain = get_initial_block_chain(block)
-    for n in range(10):
+    for n in range(100):
         mine(block, block_chain)
 
 
