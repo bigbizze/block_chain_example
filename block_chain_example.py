@@ -1,8 +1,6 @@
-import asyncio
 import hashlib
 from datetime import datetime
-from typing import NamedTuple, Optional
-
+from typing import NamedTuple, Optional, Any
 
 Block = NamedTuple("Block", (
     ("name", str),
@@ -26,53 +24,62 @@ BlockChain = NamedTuple("BlockChain", (
 ))
 
 
-def get_new_named_block(name, old_block: Block = None, **kwargs):
+def get_state_dict(old_state, **kwargs):
     if len(kwargs.keys()) == 0:
-        return Block(
-            name=name,
-            block_num=0,
-            data=None,
-            next=None,
-            hash=None,
-            nonce=0,
-            previous_hash=0x0,
-            timestamp=datetime.now()
-        )
-    else:
-        assert old_block is not None
-        return Block(
-            name=name,
-            block_num=kwargs["block_num"] if "block_num" in kwargs.keys() else old_block.block_num,
-            data=kwargs["data"] if "data" in kwargs.keys() else old_block.data,
-            next=kwargs["next"] if "next" in kwargs.keys() else old_block.next,
-            hash=kwargs["hash"] if "hash" in kwargs.keys() else old_block.hash,
-            nonce=kwargs["nonce"] if "nonce" in kwargs.keys() else old_block.nonce,
-            previous_hash=kwargs["previous_hash"] if "previous_hash" in kwargs.keys() else old_block.previous_hash,
-            timestamp=datetime.now()
-        )
+        kwargs = old_state
+    if isinstance(old_state, dict):
+        return old_state, kwargs
+    assert hasattr(old_state, "_asdict")
+    return dict(old_state._asdict()), kwargs
 
 
-def get_new_block_chain(old_block: Block = None, prev_block_chain: BlockChain = None, **kwargs):
-    diff = 10
-    if len(kwargs.keys()) == 0:
-        return BlockChain(
-            block_num=0,
-            max_nonce=2 ** 32,
-            diff=10,
-            target=2 ** (256 - diff),
-            block=old_block,
-            head=old_block
-        )
-    else:
-        assert old_block is not None
-        return BlockChain(
-            block_num=kwargs["block_num"] if "block_num" in kwargs.keys() else old_block.block_num,
-            max_nonce=kwargs["max_nonce"] if "max_nonce" in kwargs.keys() else prev_block_chain.max_nonce,
-            diff=kwargs["diff"] if "diff" in kwargs.keys() else prev_block_chain.diff,
-            target=kwargs["target"] if "target" in kwargs.keys() else prev_block_chain.target,
-            block=kwargs["block"] if "block" in kwargs.keys() else prev_block_chain.block,
-            head=kwargs["head"] if "head" in kwargs.keys() else prev_block_chain.head
-        )
+def reducer(_type, old_state: Any, **kwargs):
+    """
+    :param _type: reference to NamedTuple to be returned
+    :param old_state: the previous state of this tuple
+    :param kwargs: a set of actions, keys are property names, values are their values
+    :return: NamedTuple
+    """
+    old_state_dict, kwargs = get_state_dict(old_state, **kwargs)
+    params = {}
+    for key in old_state_dict.keys():
+        if key in kwargs.keys():
+            value = kwargs[key]
+        else:
+            value = old_state_dict[key]
+        params = [(k, v) for k, v in params if k is not key]
+        params.extend([(key, value)])
+    return _type(**dict(params))
+
+
+def get_new_named_block(name, prev_block: Block = None, **kwargs) -> Block:
+    if not len(kwargs.keys()) == 0:
+        return reducer(Block, prev_block, **kwargs)
+    return reducer(Block, {
+        "name": name,
+        "block_num": 0,
+        "data": None,
+        "next": None,
+        "hash": None,
+        "nonce": 0,
+        "previous_hash": 0x0,
+        "timestamp": datetime.now()
+    })
+
+
+def get_new_block_chain(old_block: Block) -> BlockChain:
+    return reducer(BlockChain, {
+        "block_num": 0,
+        "max_nonce": 2 ** 32,
+        "diff": 10,
+        "target": 2 ** (256 - 10),
+        "block": old_block,
+        "head": old_block
+    })
+
+
+def update_block_chain_state(prev_block_chain: BlockChain, **kwargs) -> BlockChain:
+    return reducer(BlockChain, prev_block_chain, **kwargs)
 
 
 def hash_block(block: Block):
@@ -87,35 +94,42 @@ def hash_block(block: Block):
     return h.hexdigest()
 
 
-def pr_block(block: Block):
-    print("Block Hash: " + str(hash_block(block)) + "\nBlockNo: " + str(block.block_num) + "\nBlock Data: " + str(block.data) + "\nHashes: " + str(block.nonce) + "\n--------------")
+def print_block(block: Block):
+    print(f"""
+Block Hash: {str(hash_block(block))}
+BlockNo: {str(block.block_num)}
+Block Data: {str(block.data)}
+Hashes: {str(block.nonce)}
+--------------""".lstrip())
 
 
 def add_block_to_blockchain(block: Block, block_chain: BlockChain):
-    previous_hash = hash_block(block)
     block_num = block_chain.block_num + 1
     new_block = get_new_named_block(
         f"Block #{block_num}",
         block,
-        previous_hash=previous_hash,
-        block_no=block_num
+        previous_hash=hash_block(block),
+        block_num=block_num
     )
-    return new_block, get_new_block_chain(block, block_chain, next=new_block)
+    return new_block, update_block_chain_state(
+        block_chain,
+        next=new_block,
+        block_num=block_num
+    )
 
 
 def mine(nxt_block: Block, block_chain: BlockChain):
     for n in range(block_chain.max_nonce):
         if int(hash_block(nxt_block), 16) <= block_chain.target:
             nxt_block, block_chain = add_block_to_blockchain(nxt_block, block_chain)
-            pr_block(nxt_block)
+            print_block(nxt_block)
         else:
             nxt_block = get_new_named_block(f"Block #{nxt_block.nonce}", nxt_block, nonce=nxt_block.nonce + 1)
-    return nxt_block
 
 
 def main():
-    block_chain = get_new_block_chain()
     block = get_new_named_block("Genesis")
+    block_chain = get_new_block_chain(block)
     for n in range(10):
         mine(block, block_chain)
 
